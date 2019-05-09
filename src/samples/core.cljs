@@ -50,9 +50,7 @@
                                   task-component
                                   %
                                   (fn [target] (swap! tasks (partial delete-task target)))
-                                  (fn [target] (swap! tasks (partial toggle-completed target))))))))
-       ])
-    ))
+                                  (fn [target] (swap! tasks (partial toggle-completed target))))))))])))
 
 (r/render [my-root]
           (.getElementById js/document "app"))
