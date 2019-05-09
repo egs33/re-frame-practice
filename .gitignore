@@ -3,3 +3,4 @@ resources/public/css/*
 resources/public/js/*
 !resources/public/js/.gitkeep
 .nrepl-port
+target/
