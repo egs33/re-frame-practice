@@ -20,6 +20,15 @@
                              (add-task @value)
                              (reset! value ""))} "追加"]])))
 
+(defn visible-state-component [current-state set-state]
+  (let [states ["all" "active" "completed"]]
+    [:div
+     (for [state states]
+       ^{:key state} [:label [:input {:type "radio"
+                                      :name "state-radio"
+                                      :value state
+                                      :checked (= current-state state)
+                                      :on-change #(-> % .-target .-value set-state)}] state])]))
 
 (defn visible-tasks [tasks visible-state]
   (case visible-state
@@ -43,6 +52,7 @@
         visible-state (r/atom "all")]
     (fn []
       [:div
+       [visible-state-component @visible-state #(reset! visible-state %)]
        [task-input-component #(swap! tasks (fn [orig] (conj orig {:content %
                                                                   :is-completed false})))]
        [:ul
