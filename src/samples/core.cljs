@@ -1,25 +1,79 @@
 (ns samples.core
-  (:require [reagent.core :as r]))
+  (:require [reagent.core :as r]
+            [re-frame.core :as rf]))
 
-(defn task-component [task delete-task toggle-completed]
+
+(rf/reg-event-db
+ :initialize
+ (fn [_ _]
+   {:tasks []
+    :visible-state "all"}))
+
+(rf/reg-event-db
+ :add-task
+ (fn [db [_ content]]
+   (assoc db :tasks (conj (:tasks db) {:content content
+                                       :is-completed false}))))
+
+(rf/reg-event-db
+ :delete-task
+ (fn [db [_ task]]
+   (assoc db :tasks (remove #(= % task) (:tasks db)))))
+
+(rf/reg-event-db
+ :toggle-completed
+ (fn [db [_ task]]
+   (assoc db :tasks (map #(if (= task %)
+                            (assoc % :is-completed (not (:is-completed %)))
+                            %) (:tasks db)))))
+
+(rf/reg-event-db
+ :set-visible-state
+ (fn [db [_ state]]
+   (assoc db :visible-state state)))
+
+(rf/reg-event-db
+ :clear-completed
+ (fn [db]
+   (assoc db :tasks (remove :is-completed (:tasks db)))))
+
+
+(rf/reg-sub
+ :visible-tasks
+ (fn [{:keys [tasks visible-state]} _]
+   (case visible-state
+     "all" tasks
+     "active" (remove :is-completed tasks)
+     "completed" (filter :is-completed tasks)
+     [])))
+
+(rf/reg-sub
+ :get-visible-state
+ (fn [{:keys [visible-state]} _]
+   visible-state))
+
+
+(defn task-component [task]
   [:div
    [:input {:type "checkbox"
-            :on-change #(toggle-completed task)
+            :on-change #(rf/dispatch [:toggle-completed task])
             :checked (:is-completed task)}]
    (:content task)
-   [:button {:on-click #(delete-task task)} "delete"]])
+   [:button {:on-click #(rf/dispatch [:delete-task task])} "delete"]])
 
-(defn task-input-component [add-task]
+(defn task-input-component []
   (let [value (r/atom "")]
     (fn []
       [:div
        [:input {:value @value :on-change #(reset! value (-> % .-target .-value))}]
        [:button {:on-click (fn []
-                             (add-task @value)
-                             (reset! value ""))} "Add"]])))
+                             (rf/dispatch [:add-task @value])
+                             (reset! value ""))}
+        "Add"]])))
 
-(defn visible-state-component [current-state set-state]
-  (let [states ["all" "active" "completed"]]
+(defn visible-state-component []
+  (let [states ["all" "active" "completed"]
+        current-state @(rf/subscribe [:get-visible-state])]
     [:div
      (for [state states]
        [:label {:key state}
@@ -27,42 +81,21 @@
                  :name "state-radio"
                  :value state
                  :checked (= current-state state)
-                 :on-change #(-> % .-target .-value set-state)}]
+                 :on-change #(rf/dispatch [:set-visible-state (-> % .-target .-value)])}]
         state])]))
 
-(defn visible-tasks [tasks visible-state]
-  (case visible-state
-    "all" tasks
-    "active" (remove :is-completed tasks)
-    "completed" (filter :is-completed tasks)
-    '[]))
-
-(defn delete-task [target tasks]
-  (remove #(= % target) tasks))
-
-(defn toggle-completed [target tasks]
-  (map (fn [t]
-         (if (= target t)
-           {:content (:content t)
-            :is-completed (not (:is-completed t))}
-           t)) tasks))
-
 (defn my-root []
-  (let [tasks (r/atom [])
-        visible-state (r/atom "all")]
-    (fn []
-      [:div
-       [visible-state-component @visible-state #(reset! visible-state %)]
-       [task-input-component #(swap! tasks (fn [orig] (conj orig {:content %
-                                                                  :is-completed false})))]
-       [:ul
-        (for [task (visible-tasks @tasks @visible-state)]
-          [:li {:key (:content task)}
-           [task-component
-            task
-            (fn [target] (swap! tasks (partial delete-task target)))
-            (fn [target] (swap! tasks (partial toggle-completed target)))]])]
-       [:button {:on-click #(reset! tasks (visible-tasks @tasks "active"))} "Clear completed"]])))
+  (let [tasks @(rf/subscribe [:visible-tasks])]
+    [:div
+     [visible-state-component]
+     [task-input-component]
+     [:ul
+      (for [task tasks]
+        [:li {:key (:content task)} [task-component task]])]
+     [:button {:on-click #(rf/dispatch [:clear-completed])} "Clear completed"]]))
+
+
+(rf/dispatch-sync [:initialize])
 
 (r/render [my-root]
           (.getElementById js/document "app"))
