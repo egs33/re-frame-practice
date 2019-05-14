@@ -2,14 +2,12 @@
   (:require [reagent.core :as r]))
 
 (defn task-component [task delete-task toggle-completed]
-  (let [is-completed (r/atom (:is-completed task))]
-    (fn []
-      [:li
-       [:input {:type "checkbox"
-                :on-change #(toggle-completed task)
-                :checked @is-completed}]
-       (:content task)
-       [:button {:on-click #(delete-task task)} "delete"]])))
+  [:li
+   [:input {:type "checkbox"
+            :on-change #(toggle-completed task)
+            :checked (:is-completed task)}]
+   (:content task)
+   [:button {:on-click #(delete-task task)} "delete"]])
 
 (defn task-input-component [add-task]
   (let [value (r/atom "")]
