@@ -2,7 +2,7 @@
   (:require [reagent.core :as r]))
 
 (defn task-component [task delete-task toggle-completed]
-  [:li
+  [:div
    [:input {:type "checkbox"
             :on-change #(toggle-completed task)
             :checked (:is-completed task)}]
@@ -22,11 +22,13 @@
   (let [states ["all" "active" "completed"]]
     [:div
      (for [state states]
-       ^{:key state} [:label [:input {:type "radio"
-                                      :name "state-radio"
-                                      :value state
-                                      :checked (= current-state state)
-                                      :on-change #(-> % .-target .-value set-state)}] state])]))
+       [:label {:key state}
+        [:input {:type "radio"
+                 :name "state-radio"
+                 :value state
+                 :checked (= current-state state)
+                 :on-change #(-> % .-target .-value set-state)}]
+        state])]))
 
 (defn visible-tasks [tasks visible-state]
   (case visible-state
@@ -55,10 +57,11 @@
                                                                   :is-completed false})))]
        [:ul
         (for [task (visible-tasks @tasks @visible-state)]
-          ^{:key {:content task}} [task-component
-                                   task
-                                   (fn [target] (swap! tasks (partial delete-task target)))
-                                   (fn [target] (swap! tasks (partial toggle-completed target)))])]
+          [:li {:key (:content task)}
+           [task-component
+            task
+            (fn [target] (swap! tasks (partial delete-task target)))
+            (fn [target] (swap! tasks (partial toggle-completed target)))]])]
        [:button {:on-click #(reset! tasks (visible-tasks @tasks "active"))} "Clear completed"]])))
 
 (r/render [my-root]
