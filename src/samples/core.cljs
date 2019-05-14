@@ -46,7 +46,7 @@
            t)) tasks))
 
 (defn my-root []
-  (let [tasks (r/atom '[])
+  (let [tasks (r/atom [])
         visible-state (r/atom "all")]
     (fn []
       [:div
