@@ -45,12 +45,12 @@
       [:div
        [task-input-component #(swap! tasks (fn [orig] (conj orig {:content %
                                                                   :is-completed false})))]
-       (vec (cons :ul (->> (visible-tasks @tasks @visible-state)
-                           (map #(vector
-                                  task-component
-                                  %
-                                  (fn [target] (swap! tasks (partial delete-task target)))
-                                  (fn [target] (swap! tasks (partial toggle-completed target))))))))])))
+       [:ul
+        (for [task (visible-tasks @tasks @visible-state)]
+          ^{:key {:content task}} [task-component
+                                   task
+                                   (fn [target] (swap! tasks (partial delete-task target)))
+                                   (fn [target] (swap! tasks (partial toggle-completed target)))])]])))
 
 (r/render [my-root]
           (.getElementById js/document "app"))
