@@ -18,7 +18,7 @@
        [:input {:value @value :on-change #(reset! value (-> % .-target .-value))}]
        [:button {:on-click (fn []
                              (add-task @value)
-                             (reset! value ""))} "追加"]])))
+                             (reset! value ""))} "Add"]])))
 
 (defn visible-state-component [current-state set-state]
   (let [states ["all" "active" "completed"]]
@@ -60,7 +60,8 @@
           ^{:key {:content task}} [task-component
                                    task
                                    (fn [target] (swap! tasks (partial delete-task target)))
-                                   (fn [target] (swap! tasks (partial toggle-completed target)))])]])))
+                                   (fn [target] (swap! tasks (partial toggle-completed target)))])]
+       [:button {:on-click #(reset! tasks (visible-tasks @tasks "active"))} "Clear completed"]])))
 
 (r/render [my-root]
           (.getElementById js/document "app"))
